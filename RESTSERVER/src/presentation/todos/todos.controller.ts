@@ -1,15 +1,18 @@
 import { Request, Response } from "express";
-const todos = [
-  { id: 1, title: "Todo 1" },
-  { id: 2, title: "Todo 2" },
-  { id: 3, title: "Todo 3" },
-];
+import { prisma } from "../../data/postgres/index";
+import { CreateTodoDTO } from "../../domain/dtos/todos/";
+import { UpdateTodosDTO } from "../../domain/dtos/todos/update-todo";
+
 export class TodosController {
-  getTodos(req: Request, res: Response) {
-    res.json(todos);
+  async getTodos(req: Request, res: Response) {
+    res.json(await prisma.todo.findMany());
   }
-  getTodoById(req: Request, res: Response) {
-    const todo = todos.find((t) => t.id === +req.params.d);
+  async getTodoById(req: Request, res: Response) {
+    const todo = await prisma.todo.findUnique({
+      where: {
+        id: +req.params.id,
+      },
+    });
     if (!todo) {
       res.sendStatus(404);
     } else {
@@ -17,41 +20,65 @@ export class TodosController {
     }
   }
 
-  createTodo(req: Request, res: Response) {
-    const { title } = req.body;
-    if (!title) {
-      res.status(400).json({ error: "Title is required" });
+  async createTodo(req: Request, res: Response) {
+    const [error, createTodoDto] = CreateTodoDTO.create(req.body);
+    if (error) {
+      res.status(400).json({ error });
       return;
     }
-    const newTodo = {
-      id: todos.length + 1,
-      title,
-    };
-    todos.push(newTodo);
-    res.json(newTodo);
+
+    try {
+      const newTodo = await prisma.todo.create({
+        data: createTodoDto!,
+      });
+      res.json(newTodo);
+    } catch (error) {
+      console.log(error);
+      res.sendStatus(500);
+    }
   }
 
-  updateTodo(req: Request, res: Response) {
+  async updateTodo(req: Request, res: Response) {
     const { id } = req.params;
-    const { title } = req.body;
-    const todo = todos.find((t) => t.id === +id);
+    const [error,updateTodoDto] = UpdateTodosDTO.create(req.body);
+    if (error) {
+      res.status(400).json({ error });
+      return;
+    }
+    const todo = await prisma.todo.findFirst({
+      where: {
+        id: +id,
+      },
+    });
     if (!todo) {
       res.sendStatus(404);
     } else {
-      todo.title = title;
-      res.json(todo);
+      try {
+        await prisma.todo.update({
+          where: {
+            id: +id,
+          },
+          data: updateTodoDto!.values,
+        });
+        res.json(todo);
+      } catch (error) {
+        console.log(error);
+        res.sendStatus(500);
+      }
     }
   }
   deleteTodo(req: Request, res: Response) {
     const { id } = req.params;
-    const todo = todos.find((t) => t.id === +id);
-    if (!todo) {
-      res.sendStatus(404);
-    } else {
-      todos.splice(todos.indexOf(todo), 1);
-      res.status(204).json({
-        message: "Todo deleted",
+    try {
+      prisma.todo.delete({
+        where: {
+          id: +id,
+        },
       });
+      res.sendStatus(200);
+    } catch (error) {
+      console.log(error);
+      res.sendStatus(500);
     }
   }
 }
