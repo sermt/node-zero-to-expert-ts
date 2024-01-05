@@ -6,13 +6,15 @@ export class UpdateTodosDTO {
   static create(props: IUpdateTodosDTO): [string?, UpdateTodosDTO?] {
     const { text, completedAt } = props;
 
-    
+    if(!text && !completedAt) {
+      return ["Either text or completedAt must be provided", undefined];
+    }
 
-    if (text && isTextValid(text)) {
+    if (text && !isTextValid(text)) {
       return ["Text must be at least 3 characters", undefined];
     }
 
-    if (completedAt && isDateValid(completedAt)) {
+    if (completedAt && !isDateValid(completedAt)) {
       return ["CompletedAt must be a valid date", undefined];
     }
 
@@ -31,7 +33,6 @@ export class UpdateTodosDTO {
       result.completedAt = this._completedAt;
     }
 
-    
 
     return result;
   }
