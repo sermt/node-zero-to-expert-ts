@@ -1,0 +1,3 @@
+[submodule "NodeAuth/NodeAuth/node-ts-express-shell"]
+	path = NodeAuth/NodeAuth/node-ts-express-shell
+	url = https://github.com/Klerith/node-ts-express-shell.git
