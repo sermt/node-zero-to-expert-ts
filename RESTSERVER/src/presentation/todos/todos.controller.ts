@@ -3,6 +3,7 @@ import { CreateTodoDTO } from "../../domain/dtos/todos/";
 import { UpdateTodosDTO } from "../../domain/dtos/todos/update-todo";
 import {
   CreateTodo,
+  CustomError,
   DeleteTodo,
   GetAllTodos,
   GetTodoById,
@@ -12,6 +13,11 @@ import {
 
 export class TodosController {
   constructor(private readonly todoRepository: TodoRepository) {}
+  private handleError = (res: Response, error: unknown) => {
+    if (error instanceof CustomError) {
+      res.status(error.statusCode).json({ message: error.message });
+    }
+  };
   getAllTodos(req: Request, res: Response) {
     new GetAllTodos(this.todoRepository)
       .execute()
@@ -20,7 +26,7 @@ export class TodosController {
       })
       .catch((error) => {
         console.log(error);
-        res.sendStatus(500);
+        this.handleError(res, error);
       });
   }
 
@@ -34,14 +40,14 @@ export class TodosController {
       })
       .catch((error) => {
         console.log(error);
-        res.sendStatus(404);
+        this.handleError(res, error);
       });
   };
 
   createTodo(req: Request, res: Response) {
     const [error, createTodoDto] = CreateTodoDTO.create(req.body);
     if (error) {
-      res.status(400).json({ error });
+      this.handleError(res, error);
       return;
     }
 
@@ -52,7 +58,7 @@ export class TodosController {
       })
       .catch((error) => {
         console.log(error);
-        res.sendStatus(500);
+        this.handleError(res, error);
       });
   }
 
@@ -61,7 +67,7 @@ export class TodosController {
     const [error, updateTodoDto] = UpdateTodosDTO.create(req.body);
     console.log(error);
     if (error) {
-      res.status(400).json({ error });
+      this.handleError(res, error);
       return;
     }
 
@@ -72,7 +78,7 @@ export class TodosController {
       })
       .catch((error) => {
         console.log(error);
-        res.sendStatus(500);
+        this.handleError(res, error);
       });
   }
 
@@ -85,7 +91,7 @@ export class TodosController {
       })
       .catch((error) => {
         console.log(error);
-        res.sendStatus(400);
+        this.handleError(res, error);
       });
   }
 }

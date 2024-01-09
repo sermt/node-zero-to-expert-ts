@@ -1,4 +1,5 @@
 import express, { Router } from "express";
+import compression from "compression";
 import path from "path";
 
 interface Options {
@@ -8,7 +9,8 @@ interface Options {
 }
 
 export class Server {
-  private app = express();
+  private serverListener?: import("http").Server;
+  public readonly app = express();
   private readonly port: number;
   private readonly publicPath: string;
   private readonly routes: Router;
@@ -24,6 +26,7 @@ export class Server {
     //* Middlewares
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true })); // x-www-form-urlencoded
+    this.app.use(compression());
 
     //* Public Folder
     this.app.use(express.static(this.publicPath));
@@ -39,8 +42,12 @@ export class Server {
       res.sendFile(indexPath);
     });
 
-    this.app.listen(this.port, () => {
+    this.serverListener = this.app.listen(this.port, () => {
       console.log(`Server running on port ${this.port}`);
     });
+  }
+
+  close(): void {
+    this.serverListener?.close();
   }
 }
